@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Browsing History Graph Settings</title>
+  <style>
+    body {
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    h1 {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    .help-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+    button {
+      padding: 8px 15px;
+      background-color: #0060df;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #003eaa;
+    }
+    .status {
+      margin-top: 10px;
+      padding: 8px;
+      border-radius: 4px;
+    }
+    .success {
+      background-color: #e6ffe6;
+      color: #006600;
+    }
+    .error {
+      background-color: #ffe6e6;
+      color: #cc0000;
+    }
+  </style>
+</head>
+<body>
+  <h1>Browsing History Graph Settings</h1>
+  
+  <div class="form-group">
+    <label for="sites-to-track">Sites to Track:</label>
+    <textarea id="sites-to-track" placeholder="Enter domains to track, one per line (e.g., wikipedia.org)"></textarea>
+    <div class="help-text">
+      Enter domains you want to track, one per line. For example:
+      <br>wikipedia.org
+      <br>reddit.com
+      <br>mozilla.org
+      <br><br>
+      <strong>Note:</strong> Adding a domain (e.g., "wikipedia.org") will also track all its subdomains 
+      (e.g., "en.wikipedia.org", "fr.wikipedia.org"). You don't need to list each subdomain separately.
+      <br><br>
+      <strong>External Links:</strong> The extension will also track navigation to unregistered external sites 
+      when you navigate from or to a tracked site. This allows you to see the complete browsing graph.
+    </div>
+  </div>
+
+  <button id="save-button">Save Settings</button>
+  
+  <div id="status-message" class="status" style="display: none;"></div>
+  
+  <script src="options.js"></script>
+</body>
+</html>

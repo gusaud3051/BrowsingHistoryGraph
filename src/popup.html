@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Browsing History Graph</title>
+  <style>
+    body {
+      width: 800px;
+      height: 600px;
+      margin: 0;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+    #graph-container {
+      width: 100%;
+      height: 75%;
+      border: 1px solid #ccc;
+    }
+    .controls {
+      margin-bottom: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .main-controls {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .view-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .graph-view-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    .view-selector {
+      margin-bottom: 10px;
+      width: 100%;
+    }
+    .view-selector select {
+      padding: 5px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      width: 200px;
+    }
+    .view-option {
+      margin-bottom: 8px;
+    }
+    .force-slider {
+      display: flex;
+      flex-direction: column;
+      width: 150px;
+    }
+    .force-slider label {
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+    button {
+      padding: 6px 12px;
+      background: #0060df;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0050bc;
+    }
+    #graph-settings-toggle {
+      background: #5c5c5c;
+    }
+    input[type="checkbox"] {
+      margin-right: 5px;
+    }
+    #regex-container {
+      display: none;
+      width: 100%;
+      margin-top: 5px;
+    }
+    #regex-pattern {
+      width: 100%;
+      padding: 5px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+  </style>
+  <!-- D3.js included locally -->
+  <script src="d3.v7.min.js"></script>
+</head>
+<body>
+  <div class="controls">
+    <div class="main-controls">
+      <button id="clear-data">Clear Graph Data</button>
+      <button id="export-data">Export Data</button>
+      <button id="open-settings">Settings</button>
+      <button id="graph-settings-toggle">Graph Settings</button>
+    </div>
+    
+    <div class="view-controls">
+      <input type="text" id="site-filter" placeholder="Filter by domain...">
+    </div>
+    
+    <div id="graph-view-controls" class="graph-view-controls" style="display: none;">
+      <div class="view-selector">
+        <label for="view-type">Display Mode:</label>
+        <select id="view-type">
+          <option value="url">URL</option>
+          <option value="pageName">Page Name</option>
+          <option value="pageNameRegex">Page Name + Regex</option>
+        </select>
+        
+        <div id="regex-container">
+          <label for="regex-pattern">Regex Pattern:</label>
+          <input type="text" id="regex-pattern" placeholder="Enter regex pattern...">
+        </div>
+      </div>
+      
+      <div class="force-slider">
+        <label for="center-force">Center Force: <span id="center-force-value">95%</span></label>
+        <input type="range" id="center-force" min="0" max="100" value="95">
+      </div>
+      
+      <div class="force-slider">
+        <label for="repel-force">Repel Force: <span id="repel-force-value">95%</span></label>
+        <input type="range" id="repel-force" min="0" max="100" value="95">
+      </div>
+      
+      <div class="force-slider">
+        <label for="link-force">Link Force: <span id="link-force-value">100%</span></label>
+        <input type="range" id="link-force" min="0" max="100" value="100">
+      </div>
+      
+      <div class="force-slider">
+        <label for="link-distance">Link Distance: <span id="link-distance-value">30%</span></label>
+        <input type="range" id="link-distance" min="0" max="100" value="30">
+      </div>
+    </div>
+  </div>
+  
+  <div id="config-message" style="display: none; margin-bottom: 10px; padding: 5px; background-color: #FFF3CD; border: 1px solid #FFE69C; border-radius: 4px;">
+    No data yet? Make sure your tracking settings are configured in the extension settings.
+    <a href="#" id="open-config">Open Settings</a>
+  </div>
+  
+  <div id="graph-container"></div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

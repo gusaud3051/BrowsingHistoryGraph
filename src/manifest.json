@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Browsing History Graph",
+  "version": "1.0",
+  "description": "Visualizes browsing history as a directed multigraph",
+  "permissions": [
+    "tabs", 
+    "webNavigation",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "action": {
+    "default_icon": {
+      "16": "icon.svg",
+      "48": "icon.svg",
+      "128": "icon.svg"
+    },
+    "default_title": "Browsing History Graph",
+    "default_popup": "popup.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "browsing-history-graph@example.com"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
