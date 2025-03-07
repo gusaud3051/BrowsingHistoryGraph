@@ -479,10 +479,12 @@ function renderGraph(graphData, viewSettings = {
       }
     })
     .attr('stroke-width', 2)
+    .attr('cursor', 'pointer') // Add pointer cursor to indicate clickability
     .call(d3.drag()
       .on('start', dragstarted)
       .on('drag', dragged)
-      .on('end', dragended));
+      .on('end', dragended))
+    .on('click', handleNodeClick); // Add click event handler
 
   // Add tooltips on hover with full information
   node.append('title')
@@ -705,6 +707,85 @@ function renderGraph(graphData, viewSettings = {
     d.fy = null;
   }
 
-  // Return the simulation so it can be updated elsewhere
+  // Function to handle node click - open or switch to tab
+  function handleNodeClick(event, d) {
+    // Prevent the click from triggering a drag event
+    if (event.defaultPrevented) return;
+    
+    // Get the full URL for this node
+    const url = getFullUrlFromNodeId(d.id);
+    if (!url) return;
+    
+    // First check if this URL is already open in a tab
+    findAndSwitchToTab(url).then(tabFound => {
+      // If no existing tab was found, open a new one
+      if (!tabFound) {
+        openNewTab(url);
+      }
+    }).catch(error => {
+      console.error("Error handling node click:", error);
+      // Fallback to just opening a new tab
+      openNewTab(url);
+    });
+  }
+
+  // Function to get a valid URL from node ID
+  function getFullUrlFromNodeId(nodeId) {
+    try {
+      // NodeId is stored as hostname/path, convert to a valid URL
+      const parts = nodeId.split('/');
+      const hostname = parts[0];
+      const path = parts.slice(1).join('/');
+      
+      // Add proper protocol
+      return `https://${hostname}/${path}`;
+    } catch (e) {
+      console.error("Error creating URL from node ID:", e);
+      return null;
+    }
+  }
+
+  // Function to find existing tab with this URL and switch to it
+  async function findAndSwitchToTab(url) {
+    try {
+      // Query for all tabs
+      const tabs = await browser.tabs.query({});
+      
+      // Look for a tab with a matching URL
+      for (const tab of tabs) {
+        // Simple matching - could be enhanced for better URL comparison
+        if (tab.url.includes(url)) {
+          // Found a matching tab, switch to it
+          await browser.tabs.update(tab.id, { active: true });
+          // Also focus the window containing this tab
+          await browser.windows.update(tab.windowId, { focused: true });
+          return true;
+        }
+      }
+      
+      // No matching tab found
+      return false;
+    } catch (e) {
+      console.error("Error finding existing tab:", e);
+      return false;
+    }
+  }
+
+  // Function to open a new tab with the specified URL
+  async function openNewTab(url) {
+    try {
+      // Create a new tab with the URL
+      await browser.tabs.create({ url: url });
+      
+      // Close the popup after creating the tab
+      window.close();
+      
+      return true;
+    } catch (e) {
+      console.error("Error opening new tab:", e);
+      return false;
+    }
+  }
+  
   return simulation;
 }
