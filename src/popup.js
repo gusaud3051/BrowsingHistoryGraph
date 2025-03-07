@@ -385,7 +385,7 @@ function renderGraph(graphData, viewSettings = {
     .append('path')
     .attr('d', 'M0,-5L10,0L0,5')
     .attr('fill', '#999');
-    
+
   // Add a third marker for new tab arrows
   g.append('defs')
     .append('marker')
@@ -636,8 +636,8 @@ function renderGraph(graphData, viewSettings = {
   legend.append('text')
     .attr('x', 30)
     .attr('y', 59)
-    .text('Redirect');
-    
+    .text('Middle Click');
+
   // New tab legend item
   legend.append('line')
     .attr('x1', 10)
@@ -651,7 +651,7 @@ function renderGraph(graphData, viewSettings = {
   legend.append('text')
     .attr('x', 30)
     .attr('y', 79)
-    .text('New tab');
+    .text('Left Click');
 
   // Update positions on simulation tick
   simulation.on('tick', () => {
@@ -711,11 +711,11 @@ function renderGraph(graphData, viewSettings = {
   function handleNodeClick(event, d) {
     // Prevent the click from triggering a drag event
     if (event.defaultPrevented) return;
-    
+
     // Get the full URL for this node
     const url = getFullUrlFromNodeId(d.id);
     if (!url) return;
-    
+
     // First check if this URL is already open in a tab
     findAndSwitchToTab(url).then(tabFound => {
       // If no existing tab was found, open a new one
@@ -736,7 +736,7 @@ function renderGraph(graphData, viewSettings = {
       const parts = nodeId.split('/');
       const hostname = parts[0];
       const path = parts.slice(1).join('/');
-      
+
       // Add proper protocol
       return `https://${hostname}/${path}`;
     } catch (e) {
@@ -750,7 +750,7 @@ function renderGraph(graphData, viewSettings = {
     try {
       // Query for all tabs
       const tabs = await browser.tabs.query({});
-      
+
       // Look for a tab with a matching URL
       for (const tab of tabs) {
         // Simple matching - could be enhanced for better URL comparison
@@ -762,7 +762,7 @@ function renderGraph(graphData, viewSettings = {
           return true;
         }
       }
-      
+
       // No matching tab found
       return false;
     } catch (e) {
@@ -776,16 +776,16 @@ function renderGraph(graphData, viewSettings = {
     try {
       // Create a new tab with the URL
       await browser.tabs.create({ url: url });
-      
+
       // Close the popup after creating the tab
       window.close();
-      
+
       return true;
     } catch (e) {
       console.error("Error opening new tab:", e);
       return false;
     }
   }
-  
+
   return simulation;
 }
