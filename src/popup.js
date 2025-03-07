@@ -239,7 +239,8 @@ function renderGraph(graphData, viewSettings = {
     source: edge.source,
     target: edge.target,
     timestamp: edge.timestamp,
-    isRedirect: edge.isRedirect || false
+    isRedirect: edge.isRedirect || false,
+    isNewTab: edge.isNewTab || false
   }));
 
   // Create SVG with zoom support
@@ -342,7 +343,7 @@ function renderGraph(graphData, viewSettings = {
     .data(links)
     .enter()
     .append('line')
-    .attr('stroke', '#999')
+    .attr('stroke', d => d.isNewTab ? '#4a6b' : '#999') // Color new tab links differently
     .attr('stroke-opacity', 0.6)
     .attr('stroke-width', d => {
       // Count duplicate edges for line thickness
@@ -351,7 +352,11 @@ function renderGraph(graphData, viewSettings = {
       ).length;
       return Math.log(duplicates + 1) + 1;
     })
-    .attr('stroke-dasharray', d => d.isRedirect ? '5,5' : 'none'); // Add dashed line for redirects
+    .attr('stroke-dasharray', d => {
+      if (d.isRedirect) return '5,5'; // Dashed for redirects
+      if (d.isNewTab) return '10,3'; // Dotted for new tab navigations
+      return 'none'; // Solid line for normal navigation
+    });
 
   // Add arrowheads for direction
   g.append('defs')
@@ -367,7 +372,7 @@ function renderGraph(graphData, viewSettings = {
     .attr('d', 'M0,-5L10,0L0,5')
     .attr('fill', '#999');
 
-  // Add a second marker for redirect arrows (can be the same shape but with a unique ID)
+  // Add a second marker for redirect arrows
   g.append('defs')
     .append('marker')
     .attr('id', 'arrow-redirect')
@@ -380,9 +385,27 @@ function renderGraph(graphData, viewSettings = {
     .append('path')
     .attr('d', 'M0,-5L10,0L0,5')
     .attr('fill', '#999');
+    
+  // Add a third marker for new tab arrows
+  g.append('defs')
+    .append('marker')
+    .attr('id', 'arrow-newtab')
+    .attr('viewBox', '0 -5 10 10')
+    .attr('refX', 25)
+    .attr('refY', 0)
+    .attr('markerWidth', 6)
+    .attr('markerHeight', 6)
+    .attr('orient', 'auto')
+    .append('path')
+    .attr('d', 'M0,-5L10,0L0,5')
+    .attr('fill', '#4a6b');
 
   // Apply the appropriate marker to each link
-  link.attr('marker-end', d => d.isRedirect ? 'url(#arrow-redirect)' : 'url(#arrow)');
+  link.attr('marker-end', d => {
+    if (d.isRedirect) return 'url(#arrow-redirect)';
+    if (d.isNewTab) return 'url(#arrow-newtab)';
+    return 'url(#arrow)';
+  });
 
   // Draw nodes
   const node = g.append('g')
@@ -564,8 +587,8 @@ function renderGraph(graphData, viewSettings = {
 
   // Legend background
   legend.append('rect')
-    .attr('width', 170)  // Increased width for new legend item
-    .attr('height', 70)  // Increased height for new legend item
+    .attr('width', 170)  // Width for legend
+    .attr('height', 90)  // Increased height for new tab item
     .attr('rx', 5)
     .attr('ry', 5)
     .attr('fill', 'white')
@@ -612,6 +635,21 @@ function renderGraph(graphData, viewSettings = {
     .attr('x', 30)
     .attr('y', 59)
     .text('Redirect');
+    
+  // New tab legend item
+  legend.append('line')
+    .attr('x1', 10)
+    .attr('y1', 75)
+    .attr('x2', 20)
+    .attr('y2', 75)
+    .attr('stroke', '#4a6b')
+    .attr('stroke-width', 1.5)
+    .attr('stroke-dasharray', '10,3');
+
+  legend.append('text')
+    .attr('x', 30)
+    .attr('y', 79)
+    .text('New tab');
 
   // Update positions on simulation tick
   simulation.on('tick', () => {

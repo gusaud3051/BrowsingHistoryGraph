@@ -16,6 +16,25 @@ let previousPages = {};
 // Track redirections
 let redirects = new Map(); // Maps redirect source to redirect target
 
+// Store tab opener relationships
+let tabOpeners = {};
+
+// Listen for new tab creation
+browser.tabs.onCreated.addListener((tab) => {
+  // If the tab has an opener tab, store the relationship
+  if (tab.openerTabId) {
+    tabOpeners[tab.id] = tab.openerTabId;
+    console.log(`Tab ${tab.id} was opened from tab ${tab.openerTabId}`);
+  }
+});
+
+// Listen for tab closure to clean up our maps
+browser.tabs.onRemoved.addListener((tabId) => {
+  delete previousPages[tabId];
+  delete navigationTimestamps[tabId];
+  delete tabOpeners[tabId];
+});
+
 // Function to expose functionality to other parts of the extension
 function handleMessage(message, sender, sendResponse) {
   if (message.action === 'isTrackedSite') {
@@ -151,12 +170,12 @@ browser.webNavigation.onCompleted.addListener((details) => {
   const currentUrl = details.url;
   const tabId = details.tabId;
   const currentNodeId = getNodeId(currentUrl);
-
-  // If we have a previous page for this tab, check if either current or previous is tracked
+  const currentTimestamp = Date.now();
+  
+  // Case 1: Navigation within same tab
   if (previousPages[tabId]) {
     const previousNodeId = previousPages[tabId];
     const previousTimestamp = navigationTimestamps[tabId] || 0;
-    const currentTimestamp = Date.now();
     const timeDiff = currentTimestamp - previousTimestamp;
     
     // Update the timestamp for this tab
@@ -205,6 +224,44 @@ browser.webNavigation.onCompleted.addListener((details) => {
         });
       }
     }
+  }
+  // Case 2: First navigation in a new tab that was opened from another tab
+  else if (tabOpeners[tabId] && previousPages[tabOpeners[tabId]]) {
+    const openerTabId = tabOpeners[tabId];
+    const sourceNodeId = previousPages[openerTabId];
+    
+    // Add connection only if it involves tracked sites
+    const sourceIsTracked = isTrackedSite(sourceNodeId);
+    const currentIsTracked = isTrackedSite(currentUrl);
+    
+    if (sourceIsTracked || currentIsTracked) {
+      graphData.nodes.add(sourceNodeId);
+      graphData.nodes.add(currentNodeId);
+      
+      // Add edge (direction: opener tab's page -> new tab's page)
+      graphData.edges.push({
+        source: sourceNodeId,
+        target: currentNodeId,
+        timestamp: currentTimestamp,
+        isNewTab: true // Flag to indicate this was a "new tab" navigation
+      });
+      
+      // Get the page title for the current node
+      browser.tabs.get(tabId).then(tab => {
+        if (tab && tab.title) {
+          graphData.pageTitles[currentNodeId] = tab.title;
+          saveGraphData();
+        }
+      }).catch(error => {
+        console.error("Error getting tab title:", error);
+        saveGraphData();
+      });
+      
+      console.log(`Added connection from ${sourceNodeId} to ${currentNodeId} (new tab)`);
+    }
+    
+    // We can now remove this tab from the openers map as we've processed it
+    delete tabOpeners[tabId];
   }
 
   // Update previous page for this tab
