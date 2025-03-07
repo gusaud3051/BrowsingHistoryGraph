@@ -257,7 +257,8 @@ function renderGraph(graphData, viewSettings = {
   const links = graphData.edges.map(edge => ({
     source: edge.source,
     target: edge.target,
-    timestamp: edge.timestamp
+    timestamp: edge.timestamp,
+    isRedirect: edge.isRedirect || false
   }));
   
   // Create SVG with zoom support
@@ -339,8 +340,8 @@ function renderGraph(graphData, viewSettings = {
   const simulation = d3.forceSimulation(nodes)
     .force('link', d3.forceLink(links)
       .id(d => d.id)
-      .distance(forceSettings.linkDistance)
-      .strength(forceSettings.linkForce)
+      .distance(d => d.isRedirect ? forceSettings.linkDistance * 0.75 : forceSettings.linkDistance)
+      .strength(d => d.isRedirect ? forceSettings.linkForce * 2 : forceSettings.linkForce)
     )
     .force('charge', d3.forceManyBody()
       .strength(forceSettings.repelForce)
@@ -375,16 +376,15 @@ function renderGraph(graphData, viewSettings = {
         l.source.id === d.source.id && l.target.id === d.target.id
       ).length;
       return Math.log(duplicates + 1) + 1;
-    });
+    })
+    .attr('stroke-dasharray', d => d.isRedirect ? '5,5' : 'none'); // Add dashed line for redirects
     
   // Add arrowheads for direction
-  g.append('defs').selectAll('marker')
-    .data(['end'])
-    .enter()
+  g.append('defs')
     .append('marker')
     .attr('id', 'arrow')
     .attr('viewBox', '0 -5 10 10')
-    .attr('refX', 25)
+    .attr('refX', 25) // Offset so the arrow doesn't overlap the target node
     .attr('refY', 0)
     .attr('markerWidth', 6)
     .attr('markerHeight', 6)
@@ -392,8 +392,23 @@ function renderGraph(graphData, viewSettings = {
     .append('path')
     .attr('d', 'M0,-5L10,0L0,5')
     .attr('fill', '#999');
+
+  // Add a second marker for redirect arrows (can be the same shape but with a unique ID)
+  g.append('defs')
+    .append('marker')
+    .attr('id', 'arrow-redirect')
+    .attr('viewBox', '0 -5 10 10')
+    .attr('refX', 25)
+    .attr('refY', 0)
+    .attr('markerWidth', 6) 
+    .attr('markerHeight', 6)
+    .attr('orient', 'auto')
+    .append('path')
+    .attr('d', 'M0,-5L10,0L0,5')
+    .attr('fill', '#999');
     
-  link.attr('marker-end', 'url(#arrow)');
+  // Apply the appropriate marker to each link
+  link.attr('marker-end', d => d.isRedirect ? 'url(#arrow-redirect)' : 'url(#arrow)');
     
   // Draw nodes
   const node = g.append('g')
@@ -575,8 +590,8 @@ function renderGraph(graphData, viewSettings = {
   
   // Legend background
   legend.append('rect')
-    .attr('width', 150)
-    .attr('height', 50)
+    .attr('width', 170)  // Increased width for new legend item
+    .attr('height', 70)  // Increased height for new legend item
     .attr('rx', 5)
     .attr('ry', 5)
     .attr('fill', 'white')
@@ -609,6 +624,21 @@ function renderGraph(graphData, viewSettings = {
     .attr('y', 39)
     .text('External sites');
     
+  // Redirect legend item
+  legend.append('line')
+    .attr('x1', 10)
+    .attr('y1', 55)
+    .attr('x2', 20)
+    .attr('y2', 55)
+    .attr('stroke', '#999')
+    .attr('stroke-width', 1.5)
+    .attr('stroke-dasharray', '5,5');
+    
+  legend.append('text')
+    .attr('x', 30)
+    .attr('y', 59)
+    .text('Redirect');
+    
   // Update positions on simulation tick
   simulation.on('tick', () => {
     link
@@ -628,14 +658,19 @@ function renderGraph(graphData, viewSettings = {
   
   // Add an "Auto-center" button to the main controls
   const controlsDiv = document.querySelector('.main-controls');
-  const centerButton = document.createElement('button');
-  centerButton.id = 'center-viewport';
-  centerButton.textContent = 'Center Graph';
-  centerButton.addEventListener('click', () => {
-    // Wait for simulation to settle a bit before centering
-    setTimeout(centerViewport, 100);
-  });
-  controlsDiv.appendChild(centerButton);
+  if (controlsDiv) {
+    // Check if the button already exists to avoid duplicates
+    if (!document.getElementById('center-viewport')) {
+      const centerButton = document.createElement('button');
+      centerButton.id = 'center-viewport';
+      centerButton.textContent = 'Center Graph';
+      centerButton.addEventListener('click', () => {
+        // Wait for simulation to settle a bit before centering
+        setTimeout(centerViewport, 100);
+      });
+      controlsDiv.appendChild(centerButton);
+    }
+  }
   
   // Auto-center on initial load (with slight delay to let simulation start)
   setTimeout(centerViewport, 300);
